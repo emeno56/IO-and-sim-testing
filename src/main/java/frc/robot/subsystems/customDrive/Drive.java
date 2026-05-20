@@ -66,6 +66,11 @@ public class Drive extends SubsystemBase implements Vision.VisionConsumer{
         Math.max(
             Math.hypot(TunerConstants.BackLeft.LocationX, TunerConstants.BackLeft.LocationY),
             Math.hypot(TunerConstants.BackRight.LocationX, TunerConstants.BackRight.LocationY)));
+    public static final double DRIVE_BASE_HYPOTONUSE = 
+        new Translation2d(
+            TunerConstants.FrontLeft.LocationX, TunerConstants.FrontLeft.LocationY)
+        .getDistance(new Translation2d(
+            TunerConstants.BackRight.LocationX, TunerConstants.BackRight.LocationY));
     public static final double ROBOT_MASS_KG = 68.4; 
     public static final double WHEEL_COF = 1.1;
     private static final PIDController rotationalPid = new PIDController(6.2, 0, 0);
@@ -80,11 +85,11 @@ public class Drive extends SubsystemBase implements Vision.VisionConsumer{
             DCMotor.getKrakenX60Foc(1), 
             DCMotor.getKrakenX44Foc(1),
             TunerConstants.FrontLeft.DriveMotorGearRatio, 
-            TunerConstants.FrontLeft.DriveMotorGearRatio, 
+            TunerConstants.FrontLeft.SteerMotorGearRatio, 
             Volts.of(TunerConstants.FrontLeft.DriveFrictionVoltage), 
             Volts.of(TunerConstants.FrontLeft.SteerFrictionVoltage), 
             Meters.of(TunerConstants.FrontLeft.WheelRadius), 
-            KilogramSquareMeters.of(0.0055),//TunerConstants.FrontLeft.SteerInertia), 
+            KilogramSquareMeters.of(TunerConstants.FrontLeft.SteerInertia), 
             WHEEL_COF));
             
     static final Lock odometryLock = new ReentrantLock();
@@ -177,7 +182,7 @@ public class Drive extends SubsystemBase implements Vision.VisionConsumer{
             //update robot Rotation
             if(gyro.isGyroConnected()) {
                 //use real gyro
-                robotOrientation = gyro.getRobotOreintation(); //TODO: gyro.getTobotOreintation(i);
+                robotOrientation = gyro.getRobotOreintation(); // gyro.getTobotOreintation(i)? at some point;
             } else {    
                 // Use the angle delta from the kinematics and module deltas
                 Twist2d twist = kinematics.toTwist2d(deltaPositions);
@@ -221,7 +226,6 @@ public class Drive extends SubsystemBase implements Vision.VisionConsumer{
             mHeadings[i] = getModuleTranslations()[i].getAngle();
         }
         kinematics.resetHeadings(mHeadings);
-        //TODO: maybe a logging call here?
         stop();
     }
 
@@ -261,10 +265,10 @@ public class Drive extends SubsystemBase implements Vision.VisionConsumer{
         return states;
     }
 
-    /** retruns the current chassis speeds measured by the drive. */
+    /** retruns the current FO chassis speeds measured by the drive. */
     @AutoLogOutput(key = "Drive/ChassisSpeeds/Measured")
     public ChassisSpeeds getSpeeds() {
-        return kinematics.toChassisSpeeds(getModuleStates());
+        return ChassisSpeeds.fromRobotRelativeSpeeds(kinematics.toChassisSpeeds(getModuleStates()), getRotation().toRotation2d());
     }
 
     /** Returns an array of module translations. */

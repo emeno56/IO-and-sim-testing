@@ -14,11 +14,13 @@
 package frc.robot;
 
 import static frc.robot.subsystems.vision.VisionConstants.*;
-import static frc.robot.subsystems.vision.VisionConstants.robotToCamera1;
+import static frc.robot.util.Bump.BUMPS;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Constants.Mode;
@@ -32,6 +34,9 @@ import frc.robot.subsystems.customDrive.ModuleIOKrakenReal;
 import frc.robot.subsystems.customDrive.ModuleIOKrakenSim;
 import frc.robot.subsystems.customDrive.Drive.DriveCommands;
 import frc.robot.subsystems.vision.*;
+import frc.robot.util.Bump;
+import frc.robot.util.BumpUtil;
+
 import org.ironmaple.simulation.SimulatedArena;
 import org.ironmaple.simulation.drivesims.SwerveDriveSimulation;
 import org.littletonrobotics.junction.Logger;
@@ -44,12 +49,18 @@ import org.littletonrobotics.junction.Logger;
 public class RobotContainer {
     //Subsutems
     private final Drive drive;
+    @SuppressWarnings({ "Unused", "unused" })
     private final Vision vision;
 
     private SwerveDriveSimulation driveSimulation = null;
+    private BumpUtil bump = null;
+    private boolean wasOnBump = false;
+    private Pose2d bumpVisualizationPose = null;
+    private double lastBumpUpdateTime = -1;
 
         //Controller
     private final CommandXboxController joystick = new CommandXboxController(0);
+    private final CommandXboxController joystick2 = new CommandXboxController(1);
    
     public RobotContainer() {
         switch (Constants.currentMode) {
@@ -63,6 +74,7 @@ public class RobotContainer {
                     (pose) -> {});
                 vision = new Vision(
                     drive, 
+                    null, //maybe there is a world where we do some cool robot+sim visualization, but not yet
                     new VisionIOPhotonVision(camera0Name, robotToCamera0),
                     new VisionIOPhotonVision(camera1Name, robotToCamera1)
                 );
@@ -77,8 +89,10 @@ public class RobotContainer {
                     new ModuleIOKrakenSim(TunerConstants.BackLeft, driveSimulation.getModules()[2]), 
                     new ModuleIOKrakenSim(TunerConstants.BackRight, driveSimulation.getModules()[3]), 
                     driveSimulation::setSimulationWorldPose);
+                bump = new BumpUtil(driveSimulation::getSimulatedDriveTrainPose, this::getBumpPose);
                 vision = new Vision(
                     drive,
+                    bump,
                     new VisionIOPhotonVisionSim(camera0Name, robotToCamera0, driveSimulation::getSimulatedDriveTrainPose),
                     new VisionIOPhotonVisionSim(camera1Name, robotToCamera1, driveSimulation::getSimulatedDriveTrainPose)
                 );
@@ -94,6 +108,7 @@ public class RobotContainer {
                 (pose) -> {});
             vision = new Vision(
                 drive, 
+                null,
                 new VisionIO() {},
                 new VisionIO() {});
             break;
@@ -107,7 +122,7 @@ public class RobotContainer {
             drive, 
             joystick::getLeftY, 
             joystick::getLeftX, 
-            joystick::getRightX));
+            joystick2::getLeftX));
         joystick.x().onTrue(Commands.run(() -> drive.xStop(), drive));
     } 
 
@@ -120,13 +135,56 @@ public class RobotContainer {
 
     public void updateSimulation() {
         if(Constants.currentMode != Mode.SIM) return;
+        bump.updateChecks();
 
         SimulatedArena.getInstance().simulationPeriodic();
         Pose3d[] fuel = SimulatedArena.getInstance().getGamePiecesArrayByType(
             "Fuel"
         );
 
+        Pose3d bumpRobotPose = bump.bumpVisualizePose();
+
+        for(Bump b : BUMPS) {
+            if(wasOnBump && !b.isInBump(bumpRobotPose.toPose2d())) {
+                driveSimulation.setSimulationWorldPose(bumpRobotPose.toPose2d());
+                wasOnBump = false;
+                break;
+            }
+        }
+        Logger.recordOutput("Simulation/Pose3d", bumpRobotPose);
         Logger.recordOutput("Simulation/Pose", driveSimulation.getSimulatedDriveTrainPose());
         Logger.recordOutput("Simulation/Fuel", fuel);
+    }
+
+    private Pose2d getBumpPose() {
+        if (bump != null && bump.isOnBump()) {
+            wasOnBump = true;
+            double now = Timer.getFPGATimestamp();
+
+            // First frame on bump — seed from sim pose
+            if (bumpVisualizationPose == null) {
+                bumpVisualizationPose = driveSimulation.getSimulatedDriveTrainPose();
+                lastBumpUpdateTime = now;
+                return bumpVisualizationPose;
+            }
+
+            double dt = now - lastBumpUpdateTime;
+            lastBumpUpdateTime = now;
+
+            // Advance pose using the sim's chassis speeds (ground truth velocity)
+            ChassisSpeeds speeds = drive.getSpeeds();
+            double newX = bumpVisualizationPose.getX() + speeds.vxMetersPerSecond * dt;
+            double newY = bumpVisualizationPose.getY() + speeds.vyMetersPerSecond * dt;
+            Rotation2d newHeading = bumpVisualizationPose.getRotation()
+                .plus(Rotation2d.fromRadians(speeds.omegaRadiansPerSecond * dt));
+
+            bumpVisualizationPose = new Pose2d(newX, newY, newHeading);
+            return bumpVisualizationPose;
+        }
+
+        // Off bump — reset for next crossing
+        bumpVisualizationPose = null;
+        lastBumpUpdateTime = -1;
+        return driveSimulation.getSimulatedDriveTrainPose();
     }
 }

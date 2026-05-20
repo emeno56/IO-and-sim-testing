@@ -42,4 +42,7 @@ public final class Constants {
         }
         return true;
     }
+
+    public static final double FIELD_LENGTH_M = 16.54;
+    public static final double FIELD_WIDTH_M = 8.07;
 }
