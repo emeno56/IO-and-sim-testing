@@ -85,6 +85,14 @@ public class Bump {
         return Math.max(physical1.getX(), physical2.getX());
     }
 
+    public double getPhysicalStartX(double robotRadius) {
+        return Math.min(physical1.getX(), physical2.getX()) - robotRadius;
+    }
+
+    public double getPhysicalEndX(double robotRadius) {
+        return Math.max(physical1.getX(), physical2.getX()) + robotRadius;
+    }
+
     public Translation2d getPhysical1() {
         return physical1;
     }

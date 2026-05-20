@@ -24,10 +24,6 @@ import edu.wpi.first.math.numbers.N4;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.Constants;
-import frc.robot.Constants.Mode;
-import frc.robot.util.BumpUtil;
-
 import java.util.LinkedList;
 import java.util.List;
 import org.littletonrobotics.junction.Logger;
@@ -37,12 +33,10 @@ public class Vision extends SubsystemBase {
     private final VisionIO[] io;
     private final VisionIOInputsAutoLogged[] inputs;
     private final Alert[] disconnectedAlerts;
-    private final BumpUtil bump;
 
-    public Vision(VisionConsumer consumer, BumpUtil bump, VisionIO... io) {
+    public Vision(VisionConsumer consumer, VisionIO... io) {
         this.consumer = consumer;
         this.io = io;
-        this.bump = bump;
 
         // Initialize inputs
         this.inputs = new VisionIOInputsAutoLogged[io.length];
@@ -135,7 +129,7 @@ public class Vision extends SubsystemBase {
                     angularStdDev *= cameraStdDevFactors[cameraIndex];
                 }
 
-                if(Constants.currentMode == Mode.SIM && bump != null && bump.isOnBump()) return;
+                // if(Constants.currentMode == Mode.SIM && bump != null && bump.isOnBump()) return;
 
                 // Send vision observation
                 consumer.accept(

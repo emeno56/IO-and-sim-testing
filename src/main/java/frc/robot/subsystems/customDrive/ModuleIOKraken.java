@@ -2,8 +2,6 @@ package frc.robot.subsystems.customDrive;
 
 import static frc.robot.util.PhoenixUtil.tryUntilOk;
 
-import javax.net.ssl.TrustManagerFactory;
-
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.StatusSignal;

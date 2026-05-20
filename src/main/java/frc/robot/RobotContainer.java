@@ -13,6 +13,7 @@
 
 package frc.robot;
 
+import static frc.robot.Constants.FIELD_LENGTH_M;
 import static frc.robot.subsystems.vision.VisionConstants.*;
 import static frc.robot.util.Bump.BUMPS;
 
@@ -52,6 +53,7 @@ public class RobotContainer {
     @SuppressWarnings({ "Unused", "unused" })
     private final Vision vision;
 
+    //sim stuff
     private SwerveDriveSimulation driveSimulation = null;
     private BumpUtil bump = null;
     private boolean wasOnBump = false;
@@ -74,7 +76,6 @@ public class RobotContainer {
                     (pose) -> {});
                 vision = new Vision(
                     drive, 
-                    null, //maybe there is a world where we do some cool robot+sim visualization, but not yet
                     new VisionIOPhotonVision(camera0Name, robotToCamera0),
                     new VisionIOPhotonVision(camera1Name, robotToCamera1)
                 );
@@ -92,7 +93,6 @@ public class RobotContainer {
                 bump = new BumpUtil(driveSimulation::getSimulatedDriveTrainPose, this::getBumpPose);
                 vision = new Vision(
                     drive,
-                    bump,
                     new VisionIOPhotonVisionSim(camera0Name, robotToCamera0, driveSimulation::getSimulatedDriveTrainPose),
                     new VisionIOPhotonVisionSim(camera1Name, robotToCamera1, driveSimulation::getSimulatedDriveTrainPose)
                 );
@@ -108,7 +108,6 @@ public class RobotContainer {
                 (pose) -> {});
             vision = new Vision(
                 drive, 
-                null,
                 new VisionIO() {},
                 new VisionIO() {});
             break;
@@ -129,7 +128,7 @@ public class RobotContainer {
     public void resetSimulationFuel() {
         if(Constants.currentMode != Mode.SIM) return;
 
-        driveSimulation.setSimulationWorldPose(new Pose2d(3, 3, Rotation2d.kZero));
+        driveSimulation.setSimulationWorldPose(new Pose2d(FIELD_LENGTH_M - 3, 3, Rotation2d.kZero));
         SimulatedArena.getInstance().resetFieldForAuto();
     }
 
@@ -152,7 +151,6 @@ public class RobotContainer {
             }
         }
         Logger.recordOutput("Simulation/Pose3d", bumpRobotPose);
-        Logger.recordOutput("Simulation/Pose", driveSimulation.getSimulatedDriveTrainPose());
         Logger.recordOutput("Simulation/Fuel", fuel);
     }
 
