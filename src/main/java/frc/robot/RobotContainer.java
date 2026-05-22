@@ -191,10 +191,6 @@ private Pose2d getBumpPose() {
             1.0 - (bumpTimeSeconds / BUMP_SPEED_SCALE_TIME) * (1.0 - BUMP_SPEED_SCALE_MIN)
         ) : 1.0;
 
-        Logger.recordOutput("Bump/IsOnPhysicalBump", isOnPhysicalBump);
-        Logger.recordOutput("Bump/BumpTimeSeconds", bumpTimeSeconds);
-        Logger.recordOutput("Bump/SpeedScale", speedScale);
-
         ChassisSpeeds speeds = drive.getDesiredSpeeds();
 
         double newX = bumpVisualizationPose.getX() + speeds.vxMetersPerSecond * dt * speedScale;
