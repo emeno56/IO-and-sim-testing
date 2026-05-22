@@ -22,6 +22,7 @@ import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.StaticFeedforwardSignValue;
 import com.ctre.phoenix6.sim.CANcoderSimState;
 import com.ctre.phoenix6.sim.TalonFXSimState;
@@ -125,6 +126,7 @@ public final class PhoenixUtil {
         // Skip regulation if running on a real robot
         if (RobotBase.isReal()) return moduleConstants;
 
+        moduleConstants.SteerMotorInitialConfigs.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RemoteCANcoder;
         // Apply simulation-specific adjustments to module constants
         return moduleConstants
                 // Disable encoder offsets
@@ -136,14 +138,14 @@ public final class PhoenixUtil {
                 .withEncoderInverted(false)
                 // Adjust steer motor PID gains for simulation
                 .withSteerMotorGains(new Slot0Configs()
-                        .withKP(60)
+                        .withKP(30)
                         .withKI(0)
                         .withKD(4.5)
                         .withKS(0)
                         .withKV(1.91)
                         .withKA(0)
                         .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign))
-                .withSteerMotorGearRatio(16.0)
+                .withSteerMotorGearRatio(moduleConstants.SteerMotorGearRatio)
                 // Adjust friction voltages
                 .withDriveFrictionVoltage(Volts.of(0.1))
                 .withSteerFrictionVoltage(Volts.of(0.05))

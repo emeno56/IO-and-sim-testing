@@ -25,6 +25,8 @@ public class Module {
     private final Alert steerDisconnect;
     private final Alert encoderDisconnect;
 
+    private SwerveModuleState desiredState = new SwerveModuleState();
+
     private SwerveModulePosition[] odometryPosition = new SwerveModulePosition[] {};
         public Module(ModuleIO io, int index, SwerveModuleConstants<TalonFXConfiguration, TalonFXConfiguration, CANcoderConfiguration> constants) {
             this.io = io;
@@ -62,6 +64,8 @@ public class Module {
         state.optimize(getAngle().get());
         state.cosineScale(getAngle().get());
 
+        desiredState = state;
+
         //apply state
         io.setDriveVelocity(state.speedMetersPerSecond / constants.WheelRadius);
         io.setSteerPosition(state.angle);
@@ -75,6 +79,11 @@ public class Module {
     /** return the current state of the module */
     public SwerveModuleState getState() {
         return new SwerveModuleState(getDriveVelocityMps(), getAngle().get());
+    }
+
+    /** returns the desired state of the module */ 
+    public SwerveModuleState getDesiredState() {
+        return desiredState;
     }
 
     /** returns the module position (steer anlge and drive position) */

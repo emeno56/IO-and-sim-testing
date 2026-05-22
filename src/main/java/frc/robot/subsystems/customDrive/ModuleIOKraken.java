@@ -115,7 +115,7 @@ public class ModuleIOKraken implements ModuleIO{
                 default -> throw new RuntimeException("Unsupported Swerve Configuration and ModuleIOKraken.java, line 107");
             };
             steerConfig.Feedback.RotorToSensorRatio = constants.SteerMotorGearRatio;
-            steerConfig.MotionMagic.MotionMagicCruiseVelocity = 70;//100.0 / constants.SteerMotorGearRatio;
+            steerConfig.MotionMagic.MotionMagicCruiseVelocity = 100.0 / constants.SteerMotorGearRatio;
             steerConfig.MotionMagic.MotionMagicAcceleration = 
             steerConfig.MotionMagic.MotionMagicCruiseVelocity / 0.100;
             steerConfig.MotionMagic.MotionMagicExpo_kV = 0.12 * constants.SteerMotorGearRatio;
@@ -268,12 +268,11 @@ public class ModuleIOKraken implements ModuleIO{
 
     @Override
     public void setSteerPosition(Rotation2d pos) {
-        steer.setControl(steerRequest.withPosition(pos.getMeasure()).withEnableFOC(true));
-        // steer.setControl(
-        //   switch(constants.SteerMotorClosedLoopOutput) {
-        //     case Voltage -> positionVoltageRequest.withPosition(pos.getRotations());
-        //     case TorqueCurrentFOC -> positionTorqueCurrentRequest.withPosition(pos.getRotations());
-        //   }  
-        // );
+        steer.setControl(
+          switch(constants.SteerMotorClosedLoopOutput) {
+            case Voltage -> positionVoltageRequest.withPosition(pos.getRotations());
+            case TorqueCurrentFOC -> positionTorqueCurrentRequest.withPosition(pos.getRotations());
+          }  
+        );
     }
 }

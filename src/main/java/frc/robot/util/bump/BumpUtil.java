@@ -1,4 +1,4 @@
-package frc.robot.util;
+package frc.robot.util.bump;
 
 import java.util.function.Supplier;
 
@@ -9,7 +9,7 @@ import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.util.Units;
 import frc.robot.subsystems.customDrive.Drive;
 
-import static frc.robot.util.Bump.*;
+import static frc.robot.util.bump.Bump.*;
 
 public class BumpUtil {
     boolean isOnBump = false;

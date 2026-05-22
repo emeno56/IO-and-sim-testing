@@ -1,4 +1,4 @@
-package frc.robot.util;
+package frc.robot.util.bump;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -37,6 +37,21 @@ public class Bump {
         }
         return false;
     }
+
+    public boolean isInPhysicalBump(Pose2d pose) {
+    double startX = getPhysicalStartX(Drive.DRIVE_BASE_RADIUS);
+    double endX   = getPhysicalEndX(Drive.DRIVE_BASE_RADIUS);
+    double startY = Math.min(physical1.getY(), physical2.getY()) - Drive.DRIVE_BASE_RADIUS;
+    double endY   = Math.max(physical1.getY(), physical2.getY()) + Drive.DRIVE_BASE_RADIUS;
+
+    if ((pose.getX() > startX && pose.getX() < endX) ||
+        (pose.getX() < startX && pose.getX() > endX)) {
+        if (pose.getY() > startY && pose.getY() < endY) {
+            return true;
+        }
+    }
+    return false;
+}
     
     public Translation2d getCorner1() {
         return corner1;
@@ -64,7 +79,6 @@ public class Bump {
         return new Bump(newC1, newC2, newP1, newP2);
     }
 
-    // this is specifilly for the bump because i don't want the robot interacting while under the trench
     public Bump addRobotRadius(double robotRadiusM, double robotRadiusLimit) {
         Translation2d newC1 = new Translation2d(corner1.getX() - robotRadiusM, corner1.getY() + robotRadiusLimit);
         Translation2d newC2 = new Translation2d(corner2.getX() + robotRadiusM, corner2.getY() - robotRadiusLimit);

@@ -15,7 +15,7 @@ package frc.robot;
 
 import static frc.robot.Constants.FIELD_LENGTH_M;
 import static frc.robot.subsystems.vision.VisionConstants.*;
-import static frc.robot.util.Bump.BUMPS;
+import static frc.robot.util.bump.Bump.BUMPS;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
@@ -35,8 +35,8 @@ import frc.robot.subsystems.customDrive.ModuleIOKrakenReal;
 import frc.robot.subsystems.customDrive.ModuleIOKrakenSim;
 import frc.robot.subsystems.customDrive.Drive.DriveCommands;
 import frc.robot.subsystems.vision.*;
-import frc.robot.util.Bump;
-import frc.robot.util.BumpUtil;
+import frc.robot.util.bump.Bump;
+import frc.robot.util.bump.BumpUtil;
 
 import org.ironmaple.simulation.SimulatedArena;
 import org.ironmaple.simulation.drivesims.SwerveDriveSimulation;
@@ -49,9 +49,9 @@ import org.littletonrobotics.junction.Logger;
  */
 public class RobotContainer {
     //Subsutems
-    private final Drive drive;
     @SuppressWarnings({ "Unused", "unused" })
     private final Vision vision;
+    private final Drive drive;
 
     //sim stuff
     private SwerveDriveSimulation driveSimulation = null;
@@ -151,38 +151,64 @@ public class RobotContainer {
             }
         }
         Logger.recordOutput("Simulation/Pose3d", bumpRobotPose);
+        Logger.recordOutput("Simulation/Sim Pose", driveSimulation.getSimulatedDriveTrainPose());
         Logger.recordOutput("Simulation/Fuel", fuel);
     }
 
-    private Pose2d getBumpPose() {
-        if (bump != null && bump.isOnBump()) {
-            wasOnBump = true;
-            double now = Timer.getFPGATimestamp();
+private double bumpTimeSeconds = 0.0;
+private static final double BUMP_SPEED_SCALE_MIN = 0.15; // minimum speed multiplier
+private static final double BUMP_SPEED_SCALE_TIME = 0.75; // seconds to reach minimum
 
-            // First frame on bump — seed from sim pose
-            if (bumpVisualizationPose == null) {
-                bumpVisualizationPose = driveSimulation.getSimulatedDriveTrainPose();
-                lastBumpUpdateTime = now;
-                return bumpVisualizationPose;
-            }
+private Pose2d getBumpPose() {
+    if (bump != null && bump.isOnBump()) {
+        wasOnBump = true;
+        double now = Timer.getFPGATimestamp();
 
-            double dt = now - lastBumpUpdateTime;
+        if (bumpVisualizationPose == null) {
+            bumpVisualizationPose = driveSimulation.getSimulatedDriveTrainPose();
             lastBumpUpdateTime = now;
-
-            // Advance pose using the sim's chassis speeds (ground truth velocity)
-            ChassisSpeeds speeds = drive.getSpeeds();
-            double newX = bumpVisualizationPose.getX() + speeds.vxMetersPerSecond * dt;
-            double newY = bumpVisualizationPose.getY() + speeds.vyMetersPerSecond * dt;
-            Rotation2d newHeading = bumpVisualizationPose.getRotation()
-                .plus(Rotation2d.fromRadians(speeds.omegaRadiansPerSecond * dt));
-
-            bumpVisualizationPose = new Pose2d(newX, newY, newHeading);
+            bumpTimeSeconds = 0.0;
             return bumpVisualizationPose;
         }
 
-        // Off bump — reset for next crossing
-        bumpVisualizationPose = null;
-        lastBumpUpdateTime = -1;
-        return driveSimulation.getSimulatedDriveTrainPose();
+        double dt = now - lastBumpUpdateTime;
+        lastBumpUpdateTime = now;
+
+        boolean isOnPhysicalBump = false;
+        for (Bump b : Bump.BUMPS) {
+            if (b.isInPhysicalBump(driveSimulation.getSimulatedDriveTrainPose())) {
+                isOnPhysicalBump = true;
+                break;
+            }
+        }
+
+        if (isOnPhysicalBump) {
+            bumpTimeSeconds += dt;
+        }
+
+        double speedScale = isOnPhysicalBump ? Math.max(
+            BUMP_SPEED_SCALE_MIN,
+            1.0 - (bumpTimeSeconds / BUMP_SPEED_SCALE_TIME) * (1.0 - BUMP_SPEED_SCALE_MIN)
+        ) : 1.0;
+
+        Logger.recordOutput("Bump/IsOnPhysicalBump", isOnPhysicalBump);
+        Logger.recordOutput("Bump/BumpTimeSeconds", bumpTimeSeconds);
+        Logger.recordOutput("Bump/SpeedScale", speedScale);
+
+        ChassisSpeeds speeds = drive.getDesiredSpeeds();
+
+        double newX = bumpVisualizationPose.getX() + speeds.vxMetersPerSecond * dt * speedScale;
+        double newY = bumpVisualizationPose.getY() + speeds.vyMetersPerSecond * dt * speedScale;
+        Rotation2d newHeading = bumpVisualizationPose.getRotation()
+            .plus(Rotation2d.fromRadians(speeds.omegaRadiansPerSecond * dt));
+
+        bumpVisualizationPose = new Pose2d(newX, newY, newHeading);
+        return bumpVisualizationPose;
     }
+
+    bumpVisualizationPose = null;
+    lastBumpUpdateTime = -1;
+    bumpTimeSeconds = 0.0;
+    return driveSimulation.getSimulatedDriveTrainPose();
+}
 }

@@ -73,7 +73,7 @@ public class Drive extends SubsystemBase implements Vision.VisionConsumer{
         .withGyro(COTS.ofPigeon2())
         // TODO: .withBumperSize(null, null)
         .withSwerveModule(new SwerveModuleSimulationConfig(
-            DCMotor.getKrakenX60Foc(1), 
+            DCMotor.getKrakenX60Foc(1),
             DCMotor.getKrakenX44Foc(1),
             TunerConstants.FrontLeft.DriveMotorGearRatio, 
             TunerConstants.FrontLeft.SteerMotorGearRatio, 
@@ -256,10 +256,24 @@ public class Drive extends SubsystemBase implements Vision.VisionConsumer{
         return states;
     }
 
+    /** returns the desired module states of the drive */
+    private SwerveModuleState[] getDesiredModuleStates() {
+        SwerveModuleState[] states = new SwerveModuleState[4];
+        for(int i = 0; i < 4; i++) {
+            states[i] = modules[i].getDesiredState();
+        }
+        return states;
+    }
+
     /** retruns the current FO chassis speeds measured by the drive. */
     @AutoLogOutput(key = "Drive/ChassisSpeeds/Measured")
     public ChassisSpeeds getSpeeds() {
         return ChassisSpeeds.fromRobotRelativeSpeeds(kinematics.toChassisSpeeds(getModuleStates()), getRotation().toRotation2d());
+    }
+
+    /** returns the current FO chassis speeds desired by the drive */
+    public ChassisSpeeds getDesiredSpeeds() {
+        return ChassisSpeeds.fromRobotRelativeSpeeds(kinematics.toChassisSpeeds(getDesiredModuleStates()), getRotation().toRotation2d());
     }
 
     /** Returns an array of module translations. */
@@ -332,7 +346,7 @@ public class Drive extends SubsystemBase implements Vision.VisionConsumer{
                     ChassisSpeeds.fromFieldRelativeSpeeds(
                         -y.getAsDouble() * drive.getMaxLinearSpeedMetersPerSec(), //joystick y is forward (x) direction Field Relative
                         -x.getAsDouble() * drive.getMaxLinearSpeedMetersPerSec(), //joystick x is left/right (y) direction Field Relative
-                        theta.getAsDouble() * drive.getMaxAngularSpeedRadPerSec(), 
+                        -theta.getAsDouble() * drive.getMaxAngularSpeedRadPerSec(), 
                         isRedSide() ? drive.getRotation().toRotation2d().plus(Rotation2d.k180deg) : drive.getRotation().toRotation2d()
                     )
                 ),
