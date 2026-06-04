@@ -55,7 +55,7 @@ public class RobotContainer {
     private final Drive drive;
 
     //sim stuff
-    private static final double BUMP_SPEED_SCALE_MIN = 0.15; // minimum speed multiplier
+    private static final double BUMP_SPEED_SCALE_MIN = 0.2; // minimum speed multiplier
     private static final double BUMP_SPEED_SCALE_TIME = 0.75; // seconds to reach minimum
     private SwerveDriveSimulation driveSimulation = null;
     private BumpUtil bump = null;
@@ -66,7 +66,6 @@ public class RobotContainer {
 
         //Controller
     private final CommandXboxController joystick = new CommandXboxController(0);
-    private final CommandXboxController joystick2 = new CommandXboxController(1);
    
     public RobotContainer() {
         switch (Constants.currentMode) {
@@ -125,7 +124,7 @@ public class RobotContainer {
             drive, 
             joystick::getLeftY, 
             joystick::getLeftX, 
-            joystick2::getLeftX));
+            joystick::getRightX));
         joystick.x().onTrue(Commands.run(() -> drive.xStop(), drive));
     } 
 
