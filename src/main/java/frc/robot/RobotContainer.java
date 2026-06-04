@@ -56,7 +56,7 @@ public class RobotContainer {
 
     //sim stuff
     private static final double BUMP_SPEED_SCALE_MIN = 0.15; // minimum speed multiplier
-    private static final double BUMP_SPEED_SCALE_TIME = 0.5; // seconds to reach minimum
+    private static final double BUMP_SPEED_SCALE_TIME = 0.75; // seconds to reach minimum
     private SwerveDriveSimulation driveSimulation = null;
     private BumpUtil bump = null;
     private boolean wasOnBump = false;

@@ -129,8 +129,6 @@ public class Vision extends SubsystemBase {
                     angularStdDev *= cameraStdDevFactors[cameraIndex];
                 }
 
-                // if(Constants.currentMode == Mode.SIM && bump != null && bump.isOnBump()) return;
-
                 // Send vision observation
                 consumer.accept(
                         observation.pose(),
