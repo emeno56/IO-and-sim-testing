@@ -33,6 +33,10 @@ import frc.robot.subsystems.customDrive.GyroIOSim;
 import frc.robot.subsystems.customDrive.ModuleIO;
 import frc.robot.subsystems.customDrive.ModuleIOKrakenReal;
 import frc.robot.subsystems.customDrive.ModuleIOKrakenSim;
+import frc.robot.subsystems.intake.Intake;
+import frc.robot.subsystems.intake.IntakeIO;
+import frc.robot.subsystems.intake.IntakeIOKraken;
+import frc.robot.subsystems.intake.IntakeIOKrakenSim;
 import frc.robot.subsystems.customDrive.Drive.DriveCommands;
 import frc.robot.subsystems.vision.*;
 import frc.robot.util.FuelUtil;
@@ -41,6 +45,7 @@ import frc.robot.util.bump.BumpUtil;
 
 import org.ironmaple.simulation.SimulatedArena;
 import org.ironmaple.simulation.drivesims.SwerveDriveSimulation;
+import org.json.simple.ItemList;
 import org.littletonrobotics.junction.Logger;
 
 /**
@@ -53,6 +58,7 @@ public class RobotContainer {
     @SuppressWarnings({ "Unused", "unused" })
     private final Vision vision;
     private final Drive drive;
+    private final Intake intake;
 
     //sim stuff
     private static final double BUMP_SPEED_SCALE_MIN = 0.2; // minimum speed multiplier
@@ -82,6 +88,7 @@ public class RobotContainer {
                     new VisionIOPhotonVision(camera0Name, robotToCamera0),
                     new VisionIOPhotonVision(camera1Name, robotToCamera1)
                 );
+                intake = new Intake(new IntakeIOKraken());
                 break;
             case SIM:
                 driveSimulation = new SwerveDriveSimulation(Drive.mapleSimConfig, new Pose2d());
@@ -99,6 +106,7 @@ public class RobotContainer {
                     new VisionIOPhotonVisionSim(camera0Name, robotToCamera0, driveSimulation::getSimulatedDriveTrainPose),
                     new VisionIOPhotonVisionSim(camera1Name, robotToCamera1, driveSimulation::getSimulatedDriveTrainPose)
                 );
+                intake = new Intake(new IntakeIOKrakenSim(driveSimulation));
                 break;
         default:
             //Replay Mode
@@ -113,6 +121,7 @@ public class RobotContainer {
                 drive, 
                 new VisionIO() {},
                 new VisionIO() {});
+            intake = new Intake(new IntakeIO() {});
             break;
         }
 
@@ -125,7 +134,9 @@ public class RobotContainer {
             joystick::getLeftY, 
             joystick::getLeftX, 
             joystick::getRightX));
+        intake.setDefaultCommand(intake.defaultCommand());
         joystick.x().onTrue(Commands.run(() -> drive.xStop(), drive));
+        joystick.leftTrigger().whileTrue(intake.runIntake());
     } 
 
     public void resetSimulationFuel() {

@@ -47,7 +47,5 @@ public final class Constants {
 
     public static final double FIELD_LENGTH_M = 16.54;
     public static final double FIELD_WIDTH_M = 8.07;
-    public static final int LEFT_INTAKE_MOTOR_ID = 20;
-    public static final int RIGHT_INTAKE_MOTOR_ID = 21;
     public static final CANBus CAN_BUS = new CANBus("can't train");
 }
