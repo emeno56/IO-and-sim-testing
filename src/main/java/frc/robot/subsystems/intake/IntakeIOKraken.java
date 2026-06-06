@@ -1,14 +1,19 @@
 package frc.robot.subsystems.intake;
 
 import static frc.robot.Constants.*;
+
+import org.littletonrobotics.junction.Logger;
+
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.configs.Slot1Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
-import com.ctre.phoenix6.controls.PositionTorqueCurrentFOC;
+import com.ctre.phoenix6.controls.MotionMagicVoltage;
+import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -16,7 +21,6 @@ import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import edu.wpi.first.math.filter.Debouncer;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
@@ -32,7 +36,8 @@ public class IntakeIOKraken implements IntakeIO {
 
     //control requests
     protected final VoltageOut voltageRequest = new VoltageOut(0).withEnableFOC(true);
-    protected final PositionTorqueCurrentFOC positionTorqueCurrentRequest = new PositionTorqueCurrentFOC(0.0);
+    protected final MotionMagicVoltage mmvRequest = new MotionMagicVoltage(0).withEnableFOC(true);
+    protected final PositionVoltage positionVoltageRequest = new PositionVoltage(0).withEnableFOC(true);
     protected final VelocityTorqueCurrentFOC velocityTorqueRequest = new VelocityTorqueCurrentFOC(0);
 
     protected final StatusSignal<Angle> leftPosition;
@@ -72,21 +77,32 @@ public class IntakeIOKraken implements IntakeIO {
         roller = new TalonFX(22, CAN_BUS);
 
         Slot0Configs extensionSlotConfigs = new Slot0Configs()
-            .withKP(5)
+            .withKP(2.5)
             .withKI(0)
-            .withKD(0)
-            .withKS(0.4)
-            .withKV(0.123 * 46.0 / 11.0)
+            .withKD(2)
+            .withKS(0)
+            .withKV(2)
+            .withKA(.1);
+        Slot1Configs deploySlotConfigs = new Slot1Configs()
+            .withKP(10.0)
+            .withKI(0)
+            .withKD(1.5)
+            .withKS(0)
+            .withKV(2.0)
             .withKA(0);
+
         Slot0Configs rollerSlotConfigs = new Slot0Configs()
             .withKP(15)
             .withKI(0)
             .withKD(0)
             .withKS(0.4)
-            .withKV(0.123 * 24.0 / 11.0)
+            .withKV(0.12413 * 24.0 / 11.0)
             .withKA(0);
         
-        MotionMagicConfigs magicConfigs = new MotionMagicConfigs();
+        MotionMagicConfigs magicConfigs = new MotionMagicConfigs()
+            .withMotionMagicCruiseVelocity(4.5)
+            .withMotionMagicAcceleration(30)
+            .withMotionMagicJerk(0);
 
         TalonFXConfiguration extensionMotorConfig = new TalonFXConfiguration();
             extensionMotorConfig.CurrentLimits.StatorCurrentLimit = 60;
@@ -94,11 +110,12 @@ public class IntakeIOKraken implements IntakeIO {
             extensionMotorConfig.CurrentLimits.SupplyCurrentLimit = 30;
             extensionMotorConfig.CurrentLimits.StatorCurrentLimitEnable = true;
             extensionMotorConfig.Slot0 = extensionSlotConfigs;
+            extensionMotorConfig.Slot1 = deploySlotConfigs;
             extensionMotorConfig.Feedback.SensorToMechanismRatio = 46.0 / 11.0;
             extensionMotorConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
-            extensionMotorConfig.SoftwareLimitSwitch.ForwardSoftLimitThreshold = 60.0;
+            extensionMotorConfig.SoftwareLimitSwitch.ForwardSoftLimitThreshold = 10.5 / inPerRot;
             extensionMotorConfig.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
-            extensionMotorConfig.SoftwareLimitSwitch.ReverseSoftLimitThreshold = -10.0;
+            extensionMotorConfig.SoftwareLimitSwitch.ReverseSoftLimitThreshold = 0.0;
             extensionMotorConfig.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
             extensionMotorConfig.MotionMagic = magicConfigs;
         TalonFXConfiguration rollerConfig = new TalonFXConfiguration();
@@ -242,18 +259,23 @@ public class IntakeIOKraken implements IntakeIO {
         inputs.rollerTemperature = roller.getDeviceTemp().getValueAsDouble();
 
         inputs.extendDistance = (inputs.leftPosition + inputs.rightPosition) / 2 * inPerRot;
-        inputs.isRunning = (inputs.extendDistance > 11 ? true : false) && inputs.rollerVelocityRotPerSec > 40;
+        inputs.isRunning = (inputs.extendDistance > 10 ? true : false) && inputs.rollerVelocityRotPerSec > 25;
     }
 
     @Override
     public void setIntakeState(double inches, double rotPerSec) {
+        Logger.recordOutput("Intake/Desired/distance", inches);
+        Logger.recordOutput("Intake/Desired/rotPerSec", rotPerSec);
         setIntakeDistance(inches);
         setRollerSpeed(rotPerSec);
     }
 
     @Override
     public void deployIntake() {
-        setIntakeState(12, 50);;
+        Logger.recordOutput("Intake/Desired/distance", 10.5);
+        Logger.recordOutput("Intake/Desired/rotPerSec", 50);
+        leftMotor.setControl(positionVoltageRequest.withPosition(10.5 / inPerRot).withSlot(1));
+        roller.setControl(velocityTorqueRequest.withVelocity(50));
     }
 
     @Override
@@ -263,7 +285,7 @@ public class IntakeIOKraken implements IntakeIO {
     }
     @Override
     public void setIntakeDistance(double inches) {
-        leftMotor.setControl(positionTorqueCurrentRequest.withPosition(inches / inPerRot));
+        leftMotor.setControl(mmvRequest.withPosition(inches / inPerRot));
     }
 
     @Override

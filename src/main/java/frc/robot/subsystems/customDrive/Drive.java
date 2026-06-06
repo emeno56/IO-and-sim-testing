@@ -346,7 +346,7 @@ public class Drive extends SubsystemBase implements Vision.VisionConsumer{
                     ChassisSpeeds.fromFieldRelativeSpeeds(
                         -y.getAsDouble() * drive.getMaxLinearSpeedMetersPerSec(), //joystick y is forward (x) direction Field Relative
                         -x.getAsDouble() * drive.getMaxLinearSpeedMetersPerSec(), //joystick x is left/right (y) direction Field Relative
-                        -theta.getAsDouble() * drive.getMaxAngularSpeedRadPerSec(), 
+                        -theta.getAsDouble() * 4, 
                         isRedSide() ? drive.getRotation().toRotation2d().plus(Rotation2d.k180deg) : drive.getRotation().toRotation2d()
                     )
                 ),

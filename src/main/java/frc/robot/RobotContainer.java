@@ -137,6 +137,7 @@ public class RobotContainer {
         intake.setDefaultCommand(intake.defaultCommand());
         joystick.x().onTrue(Commands.run(() -> drive.xStop(), drive));
         joystick.leftTrigger().whileTrue(intake.runIntake());
+        joystick.a().whileTrue(intake.agitateIntake());
     } 
 
     public void resetSimulationFuel() {
