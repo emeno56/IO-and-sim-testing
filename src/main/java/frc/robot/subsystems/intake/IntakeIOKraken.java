@@ -24,6 +24,8 @@ import edu.wpi.first.units.measure.Temperature;
 import edu.wpi.first.units.measure.Voltage;
 
 public class IntakeIOKraken implements IntakeIO {
+    protected static final double inPerRot = 0.5;
+
     protected final TalonFX leftMotor;
     protected final TalonFX rightMotor;
     protected final TalonFX roller;
@@ -77,7 +79,7 @@ public class IntakeIOKraken implements IntakeIO {
             .withKV(0.123 * 46.0 / 11.0)
             .withKA(0);
         Slot0Configs rollerSlotConfigs = new Slot0Configs()
-            .withKP(0.5)
+            .withKP(15)
             .withKI(0)
             .withKD(0)
             .withKS(0.4)
@@ -93,7 +95,11 @@ public class IntakeIOKraken implements IntakeIO {
             extensionMotorConfig.CurrentLimits.StatorCurrentLimitEnable = true;
             extensionMotorConfig.Slot0 = extensionSlotConfigs;
             extensionMotorConfig.Feedback.SensorToMechanismRatio = 46.0 / 11.0;
-            extensionMotorConfig.MotorOutput.NeutralMode = NeutralModeValue.Coast;
+            extensionMotorConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+            extensionMotorConfig.SoftwareLimitSwitch.ForwardSoftLimitThreshold = 60.0;
+            extensionMotorConfig.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
+            extensionMotorConfig.SoftwareLimitSwitch.ReverseSoftLimitThreshold = -10.0;
+            extensionMotorConfig.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
             extensionMotorConfig.MotionMagic = magicConfigs;
         TalonFXConfiguration rollerConfig = new TalonFXConfiguration();
             rollerConfig.CurrentLimits.StatorCurrentLimit = 120;
@@ -110,6 +116,9 @@ public class IntakeIOKraken implements IntakeIO {
         rightMotor.getConfigurator().apply(extensionMotorConfig);
         rightMotor.setControl(new Follower(20, MotorAlignmentValue.Opposed));
         roller.getConfigurator().apply(rollerConfig);
+
+        leftMotor.setPosition(0.0);
+        rightMotor.setPosition(0.0);
 
         leftPosition = leftMotor.getPosition();
         leftStatorCurrent = leftMotor.getStatorCurrent();
@@ -203,37 +212,37 @@ public class IntakeIOKraken implements IntakeIO {
         );
 
         inputs.leftIsConnected = leftConnected.calculate(leftStatus.isOK());
-        inputs.leftPosition = Units.rotationsToRadians(leftMotor.getPosition().getValueAsDouble());
+        inputs.leftPosition = leftMotor.getPosition().getValueAsDouble();
         inputs.leftStatorCurrent = leftMotor.getStatorCurrent().getValueAsDouble();
         inputs.leftSupplyCurrent = leftMotor.getSupplyCurrent().getValueAsDouble();
         inputs.leftTorqueCurrent = leftMotor.getTorqueCurrent().getValueAsDouble();
-        inputs.leftVelocityRadPerSec = Units.rotationsToRadians(leftMotor.getVelocity().getValueAsDouble());
+        inputs.leftVelocityRotPerSec = leftMotor.getVelocity().getValueAsDouble();
         inputs.leftSupplyVolts = leftMotor.getSupplyVoltage().getValueAsDouble();
         inputs.leftMotorVolts = leftMotor.getMotorVoltage().getValueAsDouble();
         inputs.leftTemperature = leftMotor.getDeviceTemp().getValueAsDouble();
 
         inputs.rightIsConnected = rightConnected.calculate(rightStatus.isOK());
-        inputs.rightPosition = Units.rotationsToRadians(rightMotor.getPosition().getValueAsDouble());
+        inputs.rightPosition = rightMotor.getPosition().getValueAsDouble();
         inputs.rightStatorCurrent = rightMotor.getStatorCurrent().getValueAsDouble();
         inputs.rightSupplyCurrent = rightMotor.getSupplyCurrent().getValueAsDouble();
         inputs.rightTorqueCurrent = rightMotor.getTorqueCurrent().getValueAsDouble();
-        inputs.rightVelocityRadPerSec = Units.rotationsToRadians(rightMotor.getVelocity().getValueAsDouble());
+        inputs.rightVelocityRotPerSec = rightMotor.getVelocity().getValueAsDouble();
         inputs.rightSupplyVolts = rightMotor.getSupplyVoltage().getValueAsDouble();
         inputs.rightMotorVolts = rightMotor.getMotorVoltage().getValueAsDouble();
         inputs.rightTemperature = rightMotor.getDeviceTemp().getValueAsDouble();
 
         inputs.rollerIsConnected = rollerConnected.calculate(rollerStatus.isOK());
-        inputs.rollerPosition = Units.rotationsToRadians(roller.getPosition().getValueAsDouble());
+        inputs.rollerPosition = roller.getPosition().getValueAsDouble();
         inputs.rollerStatorCurrent = roller.getStatorCurrent().getValueAsDouble();
         inputs.rollerSupplyCurrent = roller.getSupplyCurrent().getValueAsDouble();
         inputs.rollerTorqueCurrent = roller.getTorqueCurrent().getValueAsDouble();
-        inputs.rollerVelocityRadPerSec = Units.rotationsToRadians(roller.getVelocity().getValueAsDouble());
+        inputs.rollerVelocityRotPerSec = roller.getVelocity().getValueAsDouble();
         inputs.rollerSupplyVolts = roller.getSupplyVoltage().getValueAsDouble();
         inputs.rollerMotorVolts = roller.getMotorVoltage().getValueAsDouble();
         inputs.rollerTemperature = roller.getDeviceTemp().getValueAsDouble();
 
-        inputs.extendDistance = (inputs.leftPosition + inputs.rightPosition) / 2;
-        inputs.isRunning = (inputs.extendDistance > 11 ? true : false) && Units.radiansToRotations(inputs.rollerVelocityRadPerSec) > 35;
+        inputs.extendDistance = (inputs.leftPosition + inputs.rightPosition) / 2 * inPerRot;
+        inputs.isRunning = (inputs.extendDistance > 11 ? true : false) && inputs.rollerVelocityRotPerSec > 40;
     }
 
     @Override
@@ -244,7 +253,7 @@ public class IntakeIOKraken implements IntakeIO {
 
     @Override
     public void deployIntake() {
-        setIntakeState(12, 45);;
+        setIntakeState(12, 50);;
     }
 
     @Override
@@ -254,7 +263,7 @@ public class IntakeIOKraken implements IntakeIO {
     }
     @Override
     public void setIntakeDistance(double inches) {
-        leftMotor.setControl(positionTorqueCurrentRequest.withPosition(inches));
+        leftMotor.setControl(positionTorqueCurrentRequest.withPosition(inches / inPerRot));
     }
 
     @Override

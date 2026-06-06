@@ -164,8 +164,8 @@ public class RobotContainer {
                 break;
             }
         }
-        Logger.recordOutput("Simulation/Pose3d", bumpRobotPose);
-        Logger.recordOutput("Simulation/Sim Pose", driveSimulation.getSimulatedDriveTrainPose());
+        Logger.recordOutput("Simulation/Real Sim Pose", bumpRobotPose);
+        Logger.recordOutput("Simulation/Debug Sim Pose", driveSimulation.getSimulatedDriveTrainPose());
         Logger.recordOutput("Simulation/Fuel", fuel);
     }
 
