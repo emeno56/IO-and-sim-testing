@@ -14,7 +14,6 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
-import edu.wpi.first.math.system.LinearSystem;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.math.util.Units;
@@ -23,16 +22,15 @@ import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import edu.wpi.first.wpilibj.simulation.ElevatorSim;
 import frc.robot.generated.TunerConstants;
 
-public class IntakeIOKrakenSim extends IntakeIOKraken {
+public class IntakeIOSim extends IntakeIOKraken {
     private final IntakeSimulation intake;
-    private final double extendtionGearing = 46.0 / 11.0;
-    private static final double DRUM_RADIUS_METERS = 
+    private static final double ROLLER_RADIUS_METERS = 
         Units.inchesToMeters(inPerRot / (2 * Math.PI));
     private final ElevatorSim extensionSim = new ElevatorSim(
         DCMotor.getKrakenX44Foc(2),
-        extendtionGearing,
+        EXTENSION_GEARING,
         5,
-        DRUM_RADIUS_METERS,
+        ROLLER_RADIUS_METERS,
         0.0,
         Units.inchesToMeters(10.5),
         false,
@@ -40,7 +38,7 @@ public class IntakeIOKrakenSim extends IntakeIOKraken {
     );
     private final DCMotorSim rollerModel = new DCMotorSim(
         LinearSystemId.createDCMotorSystem(
-            DCMotor.getKrakenX60Foc(1), 0.004, 24.0 / 11.0
+            DCMotor.getKrakenX60Foc(1), 0.004, ROLLER_GEARING
         ),
         DCMotor.getKrakenX60Foc(1)
     );
@@ -50,7 +48,7 @@ public class IntakeIOKrakenSim extends IntakeIOKraken {
     private TalonFXSimState rightMotorSim;
     private TalonFXSimState rollerSim;
 
-    public IntakeIOKrakenSim(AbstractDriveTrainSimulation driveSim) {
+    public IntakeIOSim(AbstractDriveTrainSimulation driveSim) {
         this.driveSim = driveSim;
         intake = IntakeSimulation.OverTheBumperIntake(
             "Fuel", driveSim, 
@@ -88,7 +86,7 @@ public class IntakeIOKrakenSim extends IntakeIOKraken {
     private void rollerPeriodic() {
         rollerSim = roller.getSimState();
 
-        rollerSim.setSupplyVoltage(RobotController.getBatteryVoltage());
+        rollerSim.setSupplyVoltage(12);
         
         double rollerVolt = rollerSim.getMotorVoltage();
 
@@ -96,8 +94,8 @@ public class IntakeIOKrakenSim extends IntakeIOKraken {
 
         rollerModel.update(0.020);
 
-        rollerSim.setRawRotorPosition(rollerModel.getAngularPositionRotations() * (24.0 / 11.0));
-        rollerSim.setRotorVelocity(rollerModel.getAngularVelocity().times(24.0 / 11.0));
+        rollerSim.setRawRotorPosition(rollerModel.getAngularPositionRotations() * (ROLLER_GEARING));
+        rollerSim.setRotorVelocity(rollerModel.getAngularVelocity().times(ROLLER_GEARING));
 
     }
     private void extensionPeriodic() {
@@ -114,8 +112,8 @@ public class IntakeIOKrakenSim extends IntakeIOKraken {
         double mechanismRotations = extensionSim.getPositionMeters() / Units.inchesToMeters(inPerRot);
         double mechanismVelocity  = extensionSim.getVelocityMetersPerSecond() / Units.inchesToMeters(inPerRot);
 
-        double rotorPosition = mechanismRotations * extendtionGearing;
-        double rotorVelocity = mechanismVelocity  * extendtionGearing;
+        double rotorPosition = mechanismRotations * EXTENSION_GEARING;
+        double rotorVelocity = mechanismVelocity  * EXTENSION_GEARING;
 
         leftMotorSim.setRawRotorPosition(rotorPosition);
         leftMotorSim.setRotorVelocity(rotorVelocity);
@@ -123,10 +121,10 @@ public class IntakeIOKrakenSim extends IntakeIOKraken {
         rightMotorSim.setRotorVelocity(rotorVelocity);
     }
 
-    private static final double BALL_DIAMETER_METERS = Units.inchesToMeters(5.91);
-    private static final double HOPPER_CENTER_X = -0.1;
-    private static final double HOPPER_CENTER_Y = 0.0;
-    private static final double BALL_HEIGHT_METERS = Units.inchesToMeters(3.0);
+    private final double ballDiameter = Units.inchesToMeters(5.91);
+    private final double hopperX = -0.1;
+    private final double hopperY = 0.0;
+    private final double BALL_HEIGHT_METERS = Units.inchesToMeters(3.0);
 
     private Pose3d[] getFuelPoses(int count, double extendDistanceInches) {
         if (count == 0) return new Pose3d[0];
@@ -162,15 +160,15 @@ public class IntakeIOKrakenSim extends IntakeIOKraken {
             // Safety — grid is full
             if (layer >= 4) break;
 
-            double x = HOPPER_CENTER_X + (Units.inchesToMeters(extendDistanceInches) / 2.0)
-                    - (row * BALL_DIAMETER_METERS)
-                    - BALL_DIAMETER_METERS / 2
-                    + (1.5 * BALL_DIAMETER_METERS)
+            double x = hopperX + (Units.inchesToMeters(extendDistanceInches) / 2.0)
+                    - (row * ballDiameter)
+                    - ballDiameter / 2
+                    + (1.5 * ballDiameter)
                     + Units.inchesToMeters(1);
 
-            double y = HOPPER_CENTER_Y + ((col - 1.5) * BALL_DIAMETER_METERS);
+            double y = hopperY + ((col - 1.5) * ballDiameter);
 
-            double z = BALL_HEIGHT_METERS + Units.inchesToMeters(3.0) + (layer * BALL_DIAMETER_METERS);
+            double z = BALL_HEIGHT_METERS + Units.inchesToMeters(3.0) + (layer * ballDiameter);
 
             poses[placed] = robotPose3d.plus(
                 new Transform3d(x, y, z, new Rotation3d())

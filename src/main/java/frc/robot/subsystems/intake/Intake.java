@@ -9,12 +9,10 @@ import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class Intake extends SubsystemBase {
     public static final Pose3d INTAKE_OFFSET = new Pose3d(-(0.055 + 0.042), 0, 0.425 - 0.235, Rotation3d.kZero);
-    public static final Pose3d HOOD_OFFSET = new Pose3d(0.287, 0, 0.53, new Rotation3d(0, Units.degreesToRadians(-10), 0));
     private final IntakeIO io;
     private final IntakeIOInputsAutoLogged inputs = new IntakeIOInputsAutoLogged();
 

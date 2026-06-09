@@ -36,7 +36,11 @@ import frc.robot.subsystems.customDrive.ModuleIOKrakenSim;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.intake.IntakeIO;
 import frc.robot.subsystems.intake.IntakeIOKraken;
-import frc.robot.subsystems.intake.IntakeIOKrakenSim;
+import frc.robot.subsystems.intake.IntakeIOSim;
+import frc.robot.subsystems.shooter.Shooter;
+import frc.robot.subsystems.shooter.ShooterIO;
+import frc.robot.subsystems.shooter.ShooterIOKraken;
+import frc.robot.subsystems.shooter.ShooterIOSim;
 import frc.robot.subsystems.customDrive.Drive.DriveCommands;
 import frc.robot.subsystems.vision.*;
 import frc.robot.util.FuelUtil;
@@ -45,7 +49,6 @@ import frc.robot.util.bump.BumpUtil;
 
 import org.ironmaple.simulation.SimulatedArena;
 import org.ironmaple.simulation.drivesims.SwerveDriveSimulation;
-import org.json.simple.ItemList;
 import org.littletonrobotics.junction.Logger;
 
 /**
@@ -59,6 +62,7 @@ public class RobotContainer {
     private final Vision vision;
     private final Drive drive;
     private final Intake intake;
+    private final Shooter shooter;
 
     //sim stuff
     private static final double BUMP_SPEED_SCALE_MIN = 0.2; // minimum speed multiplier
@@ -89,6 +93,7 @@ public class RobotContainer {
                     new VisionIOPhotonVision(camera1Name, robotToCamera1)
                 );
                 intake = new Intake(new IntakeIOKraken());
+                shooter = new Shooter(new ShooterIOKraken());
                 break;
             case SIM:
                 driveSimulation = new SwerveDriveSimulation(Drive.mapleSimConfig, new Pose2d());
@@ -106,7 +111,8 @@ public class RobotContainer {
                     new VisionIOPhotonVisionSim(camera0Name, robotToCamera0, driveSimulation::getSimulatedDriveTrainPose),
                     new VisionIOPhotonVisionSim(camera1Name, robotToCamera1, driveSimulation::getSimulatedDriveTrainPose)
                 );
-                intake = new Intake(new IntakeIOKrakenSim(driveSimulation));
+                intake = new Intake(new IntakeIOSim(driveSimulation));
+                shooter = new Shooter(new ShooterIOSim());
                 break;
         default:
             //Replay Mode
@@ -122,6 +128,7 @@ public class RobotContainer {
                 new VisionIO() {},
                 new VisionIO() {});
             intake = new Intake(new IntakeIO() {});
+            shooter = new Shooter(new ShooterIO() {});
             break;
         }
 
@@ -135,9 +142,10 @@ public class RobotContainer {
             joystick::getLeftX, 
             joystick::getRightX));
         intake.setDefaultCommand(intake.defaultCommand());
+        shooter.setDefaultCommand(shooter.defaultCommand());
         joystick.x().onTrue(Commands.run(() -> drive.xStop(), drive));
         joystick.leftTrigger().whileTrue(intake.runIntake());
-        joystick.a().whileTrue(intake.agitateIntake());
+        joystick.a().whileTrue(intake.agitateIntake().alongWith(shooter.setShot(8, 30)));
     } 
 
     public void resetSimulationFuel() {

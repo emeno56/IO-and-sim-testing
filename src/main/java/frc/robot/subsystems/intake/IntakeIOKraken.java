@@ -28,7 +28,13 @@ import edu.wpi.first.units.measure.Temperature;
 import edu.wpi.first.units.measure.Voltage;
 
 public class IntakeIOKraken implements IntakeIO {
+    public static final double EXTENSION_GEARING = 4.181818;
+    public static final double ROLLER_GEARING = 2.181818;
     protected static final double inPerRot = 0.5;
+
+    private static final int leftID = 21;
+    private static final int rightID = 22;
+    private static final int rollerID = 20;
 
     protected final TalonFX leftMotor;
     protected final TalonFX rightMotor;
@@ -72,9 +78,9 @@ public class IntakeIOKraken implements IntakeIO {
     private final Debouncer rollerConnected = new Debouncer(0.5);
 
     public IntakeIOKraken() {
-        leftMotor = new TalonFX(20, CAN_BUS);
-        rightMotor = new TalonFX(21, CAN_BUS);
-        roller = new TalonFX(22, CAN_BUS);
+        leftMotor = new TalonFX(leftID, CAN_BUS);
+        rightMotor = new TalonFX(rightID, CAN_BUS);
+        roller = new TalonFX(rollerID, CAN_BUS);
 
         Slot0Configs extensionSlotConfigs = new Slot0Configs()
             .withKP(2.5)
@@ -96,7 +102,7 @@ public class IntakeIOKraken implements IntakeIO {
             .withKI(0)
             .withKD(0)
             .withKS(0.4)
-            .withKV(0.12413 * 24.0 / 11.0)
+            .withKV(0.12413 * ROLLER_GEARING)
             .withKA(0);
         
         MotionMagicConfigs magicConfigs = new MotionMagicConfigs()
@@ -111,7 +117,7 @@ public class IntakeIOKraken implements IntakeIO {
             extensionMotorConfig.CurrentLimits.StatorCurrentLimitEnable = true;
             extensionMotorConfig.Slot0 = extensionSlotConfigs;
             extensionMotorConfig.Slot1 = deploySlotConfigs;
-            extensionMotorConfig.Feedback.SensorToMechanismRatio = 46.0 / 11.0;
+            extensionMotorConfig.Feedback.SensorToMechanismRatio = EXTENSION_GEARING;
             extensionMotorConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
             extensionMotorConfig.SoftwareLimitSwitch.ForwardSoftLimitThreshold = 10.5 / inPerRot;
             extensionMotorConfig.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
@@ -126,12 +132,12 @@ public class IntakeIOKraken implements IntakeIO {
             rollerConfig.CurrentLimits.SupplyCurrentLowerLimit = 30;
             rollerConfig.CurrentLimits.SupplyCurrentLowerTime = 0.75;
             rollerConfig.Slot0 = rollerSlotConfigs;
-            rollerConfig.Feedback.SensorToMechanismRatio = 24.0 / 11.0;
+            rollerConfig.Feedback.SensorToMechanismRatio = ROLLER_GEARING;
             rollerConfig.MotorOutput.NeutralMode = NeutralModeValue.Coast;
 
         leftMotor.getConfigurator().apply(extensionMotorConfig);
         rightMotor.getConfigurator().apply(extensionMotorConfig);
-        rightMotor.setControl(new Follower(20, MotorAlignmentValue.Opposed));
+        rightMotor.setControl(new Follower(leftID, MotorAlignmentValue.Opposed));
         roller.getConfigurator().apply(rollerConfig);
 
         leftMotor.setPosition(0.0);
@@ -229,34 +235,34 @@ public class IntakeIOKraken implements IntakeIO {
         );
 
         inputs.leftIsConnected = leftConnected.calculate(leftStatus.isOK());
-        inputs.leftPosition = leftMotor.getPosition().getValueAsDouble();
-        inputs.leftStatorCurrent = leftMotor.getStatorCurrent().getValueAsDouble();
-        inputs.leftSupplyCurrent = leftMotor.getSupplyCurrent().getValueAsDouble();
-        inputs.leftTorqueCurrent = leftMotor.getTorqueCurrent().getValueAsDouble();
-        inputs.leftVelocityRotPerSec = leftMotor.getVelocity().getValueAsDouble();
-        inputs.leftSupplyVolts = leftMotor.getSupplyVoltage().getValueAsDouble();
-        inputs.leftMotorVolts = leftMotor.getMotorVoltage().getValueAsDouble();
-        inputs.leftTemperature = leftMotor.getDeviceTemp().getValueAsDouble();
+        inputs.leftPosition = leftPosition.getValueAsDouble();
+        inputs.leftStatorCurrent = leftStatorCurrent.getValueAsDouble();
+        inputs.leftSupplyCurrent = leftSupplyCurrent.getValueAsDouble();
+        inputs.leftTorqueCurrent = leftTorqueCurrent.getValueAsDouble();
+        inputs.leftVelocityRotPerSec = leftVelocity.getValueAsDouble();
+        inputs.leftSupplyVolts = leftSupplyVoltage.getValueAsDouble();
+        inputs.leftMotorVolts = leftVoltage.getValueAsDouble();
+        inputs.leftTemperature = leftTemperature.getValueAsDouble();
 
         inputs.rightIsConnected = rightConnected.calculate(rightStatus.isOK());
-        inputs.rightPosition = rightMotor.getPosition().getValueAsDouble();
-        inputs.rightStatorCurrent = rightMotor.getStatorCurrent().getValueAsDouble();
-        inputs.rightSupplyCurrent = rightMotor.getSupplyCurrent().getValueAsDouble();
-        inputs.rightTorqueCurrent = rightMotor.getTorqueCurrent().getValueAsDouble();
-        inputs.rightVelocityRotPerSec = rightMotor.getVelocity().getValueAsDouble();
-        inputs.rightSupplyVolts = rightMotor.getSupplyVoltage().getValueAsDouble();
-        inputs.rightMotorVolts = rightMotor.getMotorVoltage().getValueAsDouble();
-        inputs.rightTemperature = rightMotor.getDeviceTemp().getValueAsDouble();
+        inputs.rightPosition = rightPosition.getValueAsDouble();
+        inputs.rightStatorCurrent = rightStatorCurrent.getValueAsDouble();
+        inputs.rightSupplyCurrent = rightSupplyCurrent.getValueAsDouble();
+        inputs.rightTorqueCurrent = rightTorqueCurrent.getValueAsDouble();
+        inputs.rightVelocityRotPerSec = rightVelocity.getValueAsDouble();
+        inputs.rightSupplyVolts = rightSupplyVoltage.getValueAsDouble();
+        inputs.rightMotorVolts = rightVoltage.getValueAsDouble();
+        inputs.rightTemperature = rightTemperature.getValueAsDouble();
 
         inputs.rollerIsConnected = rollerConnected.calculate(rollerStatus.isOK());
-        inputs.rollerPosition = roller.getPosition().getValueAsDouble();
-        inputs.rollerStatorCurrent = roller.getStatorCurrent().getValueAsDouble();
-        inputs.rollerSupplyCurrent = roller.getSupplyCurrent().getValueAsDouble();
-        inputs.rollerTorqueCurrent = roller.getTorqueCurrent().getValueAsDouble();
-        inputs.rollerVelocityRotPerSec = roller.getVelocity().getValueAsDouble();
-        inputs.rollerSupplyVolts = roller.getSupplyVoltage().getValueAsDouble();
-        inputs.rollerMotorVolts = roller.getMotorVoltage().getValueAsDouble();
-        inputs.rollerTemperature = roller.getDeviceTemp().getValueAsDouble();
+        inputs.rollerPosition = rollerPosition.getValueAsDouble();
+        inputs.rollerStatorCurrent = rollerStatorCurrent.getValueAsDouble();
+        inputs.rollerSupplyCurrent = rollerSupplyCurrent.getValueAsDouble();
+        inputs.rollerTorqueCurrent = rollerTorqueCurrent.getValueAsDouble();
+        inputs.rollerVelocityRotPerSec = rollerVelocity.getValueAsDouble();
+        inputs.rollerSupplyVolts = rollerSupplyVoltage.getValueAsDouble();
+        inputs.rollerMotorVolts = rollerVoltage.getValueAsDouble();
+        inputs.rollerTemperature = rollerTemperature.getValueAsDouble();
 
         inputs.extendDistance = (inputs.leftPosition + inputs.rightPosition) / 2 * inPerRot;
         inputs.isRunning = (inputs.extendDistance > 10 ? true : false) && inputs.rollerVelocityRotPerSec > 25;
