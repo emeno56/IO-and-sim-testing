@@ -50,4 +50,6 @@ public interface IntakeIO {
     public default void setIntakeDistance(double inches) {}
 
     public default void setRollerSpeed(double rotPerSec) {}
+
+    public default int getFuelCount() {return 0;}
 }

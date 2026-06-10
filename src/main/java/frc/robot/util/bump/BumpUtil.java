@@ -25,9 +25,10 @@ public class BumpUtil {
      * to be called periodically to keep checking whether the robot is in the bump;
      */
 
-    public void updateChecks() {
+    public void updateChecks(Pose2d visualizationPose) {
+        Pose2d poseToCheck = visualizationPose != null ? visualizationPose : checkPose.get();
         for(Bump bump : BUMPS) {
-            if(bump.isInBump(checkPose.get())) {
+            if(bump.isInBump(poseToCheck)) {
                 isOnBump = true;
                 return;
             }

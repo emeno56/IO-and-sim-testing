@@ -4,7 +4,13 @@ import static frc.robot.Constants.FIELD_LENGTH_M;
 import static frc.robot.Constants.FIELD_WIDTH_M;
 
 import org.ironmaple.simulation.SimulatedArena;
+import org.ironmaple.simulation.drivesims.AbstractDriveTrainSimulation;
 import org.ironmaple.simulation.seasonspecific.rebuilt2026.RebuiltFuelOnField;
+
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
 
@@ -12,9 +18,13 @@ public class FuelUtil {
     private static final double fuelDiameter = 0.15; //15 cm
     private static final double fuelSpacing = 0.0025; //2.5 mm
     private static final double centerLine = Units.inchesToMeters(2); //the 2 inch gap between the fuel at the center of the field
+    private static final double hopperX = 0.3;
+    private static final double hopperY = 0.0;
+    private static final double BALL_HEIGHT_METERS = Units.inchesToMeters(3.0);
+
     public static void fullFieldReset() {
         //the corner fuel in the neutral zone
-        Translation2d redRightCornerFuel = new Translation2d(FIELD_LENGTH_M / 2 + Units.inchesToMeters(36) - fuelDiameter / 2, FIELD_WIDTH_M / 2 + Units.inchesToMeters(103) - fuelDiameter / 2);
+        Translation2d redRightCornerFuel = new Translation2d(FIELD_LENGTH_M / 2 + Units.inchesToMeters(36) - fuelDiameter / 2, FIELD_WIDTH_M / 2 + Units.inchesToMeters(103) - fuelDiameter / 2 - fuelDiameter * 2.0);
         Translation2d redLeftCornerFuel = new Translation2d(redRightCornerFuel.getX(), FIELD_WIDTH_M - redRightCornerFuel.getY());
         Translation2d blueRightCornerFuel = new Translation2d(FIELD_LENGTH_M - redLeftCornerFuel.getX(), redLeftCornerFuel.getY());
         Translation2d blueLeftCornerFuel = new Translation2d(blueRightCornerFuel.getX(), FIELD_WIDTH_M - blueRightCornerFuel.getY());
@@ -108,5 +118,51 @@ public class FuelUtil {
                 SimulatedArena.getInstance().addGamePiece(new RebuiltFuelOnField(new Translation2d(x, y)));
             }
         }
+    }
+
+    public static Pose3d[] getFuelPosesFromRobot(Pose3d robotPose3d, int count, double extendDistanceInches) {
+        if (count == 0) return new Pose3d[0];
+
+        Pose3d[] poses = new Pose3d[count];
+
+        int ballsPerRow = 6;
+        int ballsPerCol = 4;
+        int ballsPerLayer = ballsPerRow * ballsPerCol;
+
+        int placed = 0;
+        int slot = 0;
+
+        while (placed < count) {
+            int layer     = slot / ballsPerLayer;
+            int remainder = slot % ballsPerLayer;
+            int row       = remainder / ballsPerCol;
+            int col       = remainder % ballsPerCol;
+
+            slot++;
+
+            // Skip front 2 rows (row <= 1) top 2 layers (layer >= 2)
+            if (row <= 1 && layer >= 2) continue;
+
+            // Safety — grid is full
+            if (layer >= 4) break;
+
+            double x = hopperX - Units.inchesToMeters(extendDistanceInches)
+                        - (row * fuelDiameter)
+                        - fuelDiameter / 2.0
+                        + (1.5 * fuelDiameter)
+                        + Units.inchesToMeters(1.0);
+
+            double y = hopperY + ((col - 1.5) * fuelDiameter);
+
+            double z = BALL_HEIGHT_METERS + Units.inchesToMeters(3.0) + (layer * fuelDiameter);
+
+            poses[placed] = robotPose3d.plus(
+                new Transform3d(x, y, z, new Rotation3d())
+            );
+
+            placed++;
+        }
+
+        return poses;
     }
 }

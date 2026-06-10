@@ -107,7 +107,7 @@ public class IntakeIOKraken implements IntakeIO {
         
         MotionMagicConfigs magicConfigs = new MotionMagicConfigs()
             .withMotionMagicCruiseVelocity(4.5)
-            .withMotionMagicAcceleration(30)
+            .withMotionMagicAcceleration(28)
             .withMotionMagicJerk(0);
 
         TalonFXConfiguration extensionMotorConfig = new TalonFXConfiguration();

@@ -39,19 +39,18 @@ public class Bump {
     }
 
     public boolean isInPhysicalBump(Pose2d pose) {
-    double startX = getPhysicalStartX(Drive.DRIVE_BASE_RADIUS);
-    double endX   = getPhysicalEndX(Drive.DRIVE_BASE_RADIUS);
-    double startY = Math.min(physical1.getY(), physical2.getY()) - Drive.DRIVE_BASE_RADIUS;
-    double endY   = Math.max(physical1.getY(), physical2.getY()) + Drive.DRIVE_BASE_RADIUS;
+        double startX = getPhysicalStartX(Drive.DRIVE_BASE_RADIUS);
+        double endX   = getPhysicalEndX(Drive.DRIVE_BASE_RADIUS);
+        double startY = Math.min(physical1.getY(), physical2.getY()) - Drive.DRIVE_BASE_RADIUS;
+        double endY   = Math.max(physical1.getY(), physical2.getY()) + Drive.DRIVE_BASE_RADIUS;
 
-    if ((pose.getX() > startX && pose.getX() < endX) ||
-        (pose.getX() < startX && pose.getX() > endX)) {
-        if (pose.getY() > startY && pose.getY() < endY) {
-            return true;
+        if (pose.getX() > startX && pose.getX() < endX) {
+            if (pose.getY() > startY && pose.getY() < endY) {
+                return true;
+            }
         }
+        return false;
     }
-    return false;
-}
     
     public Translation2d getCorner1() {
         return corner1;
@@ -79,9 +78,9 @@ public class Bump {
         return new Bump(newC1, newC2, newP1, newP2);
     }
 
-    public Bump addRobotRadius(double robotRadiusM, double robotRadiusLimit) {
+    public Bump addRobotRadius(double robotRadiusM, double robotRadiusLimit, double idkyButItWorks) {
         Translation2d newC1 = new Translation2d(corner1.getX() - robotRadiusM, corner1.getY() + robotRadiusLimit);
-        Translation2d newC2 = new Translation2d(corner2.getX() + robotRadiusM, corner2.getY() - robotRadiusLimit);
+        Translation2d newC2 = new Translation2d(corner2.getX() + robotRadiusM, corner2.getY() - idkyButItWorks);
         return new Bump(newC1, newC2, physical1, physical2);
     }
 
@@ -123,7 +122,7 @@ public class Bump {
         new Translation2d(
             Units.inchesToMeters(158.6 + 44.4), 
             1.668 + 1.854))
-            .addRobotRadius(Drive.DRIVE_BASE_HYPOTONUSE, Drive.DRIVE_BASE_RADIUS)
+            .addRobotRadius(Drive.DRIVE_BASE_HYPOTONUSE, Drive.DRIVE_BASE_HALF_WIDTH, Drive.DRIVE_BASE_RADIUS)
             .addXTolerance(xToleranceM);
     public static final Bump BLUE_LEFT_BUMP = flipBumpToOtherSide(BLUE_RIGHT_BUMP);
     public static final Bump RED_LEFT_BUMP = flipBumpToOtherAlliance(BLUE_RIGHT_BUMP);

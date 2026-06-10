@@ -46,9 +46,17 @@ public class Intake extends SubsystemBase {
     }
 
     public Command agitateIntake() {
-         return run(() -> {
-        double target = (Timer.getFPGATimestamp() % 1.0) < 0.5 ? 7.5 : 10.5;
-        io.setIntakeState(target, 50);
-    });
+        return run(() -> {
+            double target = (Timer.getFPGATimestamp() % 1.0) < 0.5 ? 7.5 : 10.5;
+            io.setIntakeState(target, 50);
+        });
+    }
+
+    public int getFuelCount() {
+        return io.getFuelCount();
+    }
+
+    public double getExtendDistance() {
+        return inputs.extendDistance;
     }
 }

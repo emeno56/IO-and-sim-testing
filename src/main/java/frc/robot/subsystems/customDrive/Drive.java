@@ -62,6 +62,7 @@ public class Drive extends SubsystemBase implements Vision.VisionConsumer{
             TunerConstants.FrontLeft.LocationX, TunerConstants.FrontLeft.LocationY)
         .getDistance(new Translation2d(
             TunerConstants.BackRight.LocationX, TunerConstants.BackRight.LocationY));
+    public static final double DRIVE_BASE_HALF_WIDTH = Math.abs(TunerConstants.FrontLeft.LocationY);
     public static final double ROBOT_MASS_KG = 68.4; 
     public static final double WHEEL_COF = 1.1;
     private static final PIDController rotationalPid = new PIDController(6.2, 0, 0);

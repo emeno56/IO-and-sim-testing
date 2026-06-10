@@ -17,6 +17,7 @@ import static frc.robot.Constants.FIELD_LENGTH_M;
 import static frc.robot.subsystems.vision.VisionConstants.*;
 import static frc.robot.util.bump.Bump.BUMPS;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -157,14 +158,32 @@ public class RobotContainer {
 
     public void updateSimulation() {
         if(Constants.currentMode != Mode.SIM) return;
-        bump.updateChecks();
 
-        SimulatedArena.getInstance().simulationPeriodic();
         Pose3d[] fuel = SimulatedArena.getInstance().getGamePiecesArrayByType(
             "Fuel"
         );
 
         Pose3d bumpRobotPose = bump.bumpVisualizePose();
+
+        if (bump.isOnBump() && bumpVisualizationPose != null) {
+            for (Bump b : Bump.BUMPS) {
+                if (b.isInBump(bumpVisualizationPose)) {
+                    double minY = Math.min(b.getCorner1().getY(), b.getCorner2().getY()) + 0.065;
+                    double maxY = Math.max(b.getCorner1().getY(), b.getCorner2().getY()) - 0.06;
+                    double clampedY = MathUtil.clamp(bumpVisualizationPose.getY(), minY, maxY);
+                    bumpVisualizationPose = new Pose2d(
+                        bumpVisualizationPose.getX(), 
+                        clampedY, 
+                        bumpVisualizationPose.getRotation());
+                    driveSimulation.setSimulationWorldPose(bumpVisualizationPose);
+                    break;
+                }
+            }
+        }
+
+        bump.updateChecks(bumpVisualizationPose);
+
+        SimulatedArena.getInstance().simulationPeriodic();
 
         for(Bump b : BUMPS) {
             if(wasOnBump && !b.isInBump(bumpRobotPose.toPose2d())) {
@@ -173,12 +192,17 @@ public class RobotContainer {
                 break;
             }
         }
+        
+        Pose3d[] robotFuel = FuelUtil.getFuelPosesFromRobot(bumpRobotPose, intake.getFuelCount(), intake.getExtendDistance());
+
         Logger.recordOutput("Simulation/Real Sim Pose", bumpRobotPose);
         Logger.recordOutput("Simulation/Debug Sim Pose", driveSimulation.getSimulatedDriveTrainPose());
+        Logger.recordOutput("Simulation/Robot Fuel", robotFuel);
         Logger.recordOutput("Simulation/Fuel", fuel);
+
+        Logger.recordOutput("Bump/VisualizationPoseNull", bumpVisualizationPose == null);
+        Logger.recordOutput("Bump/IsOnBump", bump.isOnBump());
     }
-
-
 
     private Pose2d getBumpPose() {
         if (bump != null && bump.isOnBump()) {
@@ -216,6 +240,16 @@ public class RobotContainer {
 
             double newX = bumpVisualizationPose.getX() + speeds.vxMetersPerSecond * dt * speedScale;
             double newY = bumpVisualizationPose.getY() + speeds.vyMetersPerSecond * dt * speedScale;
+
+            for (Bump b : Bump.BUMPS) {
+                if (b.isInBump(bumpVisualizationPose)) {
+                    double minY = Math.min(b.getCorner1().getY(), b.getCorner2().getY());
+                    double maxY = Math.max(b.getCorner1().getY(), b.getCorner2().getY());
+                    newY = MathUtil.clamp(newY, minY, maxY);
+                    break;
+                }
+            }
+
             Rotation2d newHeading = bumpVisualizationPose.getRotation()
                 .plus(Rotation2d.fromRadians(speeds.omegaRadiansPerSecond * dt));
 
