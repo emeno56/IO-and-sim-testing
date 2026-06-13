@@ -160,7 +160,14 @@ public class RobotContainer {
                     ))
                 ));
             }, Set.of()).repeatedly()
-            );
+        );
+        joystick.a().whileTrue(
+            DriveCommands.pointToPoint(
+                drive, 
+                () -> getHubLocation().getTranslation(), 
+                joystick::getLeftY, 
+                joystick::getLeftX)
+        );
     } 
 
     public void resetSimulationFuel() {

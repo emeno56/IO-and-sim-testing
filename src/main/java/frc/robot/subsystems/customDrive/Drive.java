@@ -7,6 +7,7 @@ import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.Constants.isRedSide;
 
+import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
@@ -18,6 +19,10 @@ import org.ironmaple.simulation.drivesims.configs.DriveTrainSimulationConfig;
 import org.ironmaple.simulation.drivesims.configs.SwerveModuleSimulationConfig;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
+
+import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
+import com.ctre.phoenix6.swerve.SwerveRequest;
+import com.ctre.phoenix6.swerve.SwerveRequest.FieldCentricFacingAngle;
 import com.pathplanner.lib.pathfinding.Pathfinding;
 
 import edu.wpi.first.hal.HAL;
@@ -66,7 +71,7 @@ public class Drive extends SubsystemBase implements Vision.VisionConsumer{
     public static final double DRIVE_BASE_HALF_WIDTH = Math.abs(TunerConstants.FrontLeft.LocationY);
     public static final double ROBOT_MASS_KG = 68.4; 
     public static final double WHEEL_COF = 1.1;
-    private static final PIDController rotationalPid = new PIDController(6.2, 0, 0);
+    private static final PIDController rotationalPid = new PIDController(2.5, 0, 0.1);
     
     //Swerve drive sime
     public static final DriveTrainSimulationConfig mapleSimConfig = DriveTrainSimulationConfig.Default()
@@ -133,6 +138,8 @@ public class Drive extends SubsystemBase implements Vision.VisionConsumer{
             new SysIdRoutine.Config(
                 null, null, null, (state) -> Logger.recordOutput("Drive/SysIdState", state.toString())), 
             new SysIdRoutine.Mechanism(volts -> runCharacterization(volts.in(Volts)), null, this));
+
+            rotationalPid.enableContinuousInput(0, Math.PI * 2);
     }
 
     @Override
@@ -358,6 +365,27 @@ public class Drive extends SubsystemBase implements Vision.VisionConsumer{
                 ),
                 drive
             );
+        }
+
+        public static Command pointToPoint(Drive drive, Supplier<Translation2d> point, DoubleSupplier y, DoubleSupplier x) {
+           return Commands.defer(() -> { return 
+            Commands.run(() -> {
+                Translation2d delta = point.get().minus(drive.getPose().toPose2d().getTranslation());
+                Rotation2d targetAngle = delta.getAngle();//.plus(isRedSide() ? Rotation2d.k180deg : Rotation2d.kZero);
+                
+                Rotation2d currentAngle = drive.getRotation().toRotation2d();
+
+                double omega = rotationalPid.calculate(currentAngle.getRadians(), targetAngle.getRadians());
+
+                drive.runSpeeds(
+                    ChassisSpeeds.fromFieldRelativeSpeeds(
+                        -y.getAsDouble(), 
+                        -x.getAsDouble(), 
+                        omega, 
+                        currentAngle.plus(isRedSide() ? Rotation2d.k180deg : Rotation2d.kZero))
+                );
+            }, drive);
+           }, Set.of());
         }
     }
 }
