@@ -11,6 +11,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
 
 import org.ironmaple.simulation.drivesims.COTS;
 import org.ironmaple.simulation.drivesims.configs.DriveTrainSimulationConfig;
@@ -275,6 +276,10 @@ public class Drive extends SubsystemBase implements Vision.VisionConsumer{
     /** returns the current FO chassis speeds desired by the drive */
     public ChassisSpeeds getDesiredSpeeds() {
         return ChassisSpeeds.fromRobotRelativeSpeeds(kinematics.toChassisSpeeds(getDesiredModuleStates()), getRotation().toRotation2d());
+    }
+
+    public DoubleSupplier getDistanceToPose(Supplier<Pose2d> pose) {
+        return () -> pose.get().getTranslation().getDistance(getPose().toPose2d().getTranslation());
     }
 
     /** Returns an array of module translations. */

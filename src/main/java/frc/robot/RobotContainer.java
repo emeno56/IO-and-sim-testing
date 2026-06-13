@@ -14,8 +14,11 @@
 package frc.robot;
 
 import static frc.robot.Constants.FIELD_LENGTH_M;
+import static frc.robot.Constants.getHubLocation;
 import static frc.robot.subsystems.vision.VisionConstants.*;
 import static frc.robot.util.bump.Bump.BUMPS;
+
+import java.util.Set;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -38,6 +41,7 @@ import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.intake.IntakeIO;
 import frc.robot.subsystems.intake.IntakeIOKraken;
 import frc.robot.subsystems.intake.IntakeIOSim;
+import frc.robot.subsystems.shooter.LaunchCalculator;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.shooter.ShooterIO;
 import frc.robot.subsystems.shooter.ShooterIOKraken;
@@ -106,6 +110,7 @@ public class RobotContainer {
                     new ModuleIOKrakenSim(TunerConstants.BackLeft, driveSimulation.getModules()[2]), 
                     new ModuleIOKrakenSim(TunerConstants.BackRight, driveSimulation.getModules()[3]), 
                     driveSimulation::setSimulationWorldPose);
+                drive.resetPose(driveSimulation.getSimulatedDriveTrainPose());
                 bump = new BumpUtil(driveSimulation::getSimulatedDriveTrainPose, this::getBumpPose);
                 vision = new Vision(
                     drive,
@@ -146,13 +151,22 @@ public class RobotContainer {
         shooter.setDefaultCommand(shooter.defaultCommand());
         joystick.x().onTrue(Commands.run(() -> drive.xStop(), drive));
         joystick.leftTrigger().whileTrue(intake.runIntake());
-        joystick.a().whileTrue(intake.agitateIntake().alongWith(shooter.setShot(8, 30)));
+        joystick.a().whileTrue(
+            Commands.defer(() -> { return
+                intake.agitateIntake().alongWith(
+                Commands.run(() ->
+                    shooter.setShot(LaunchCalculator.calculateBestParameters(
+                        drive.getDistanceToPose(() -> getHubLocation()).getAsDouble()
+                    ))
+                ));
+            }, Set.of()).repeatedly()
+            );
     } 
 
     public void resetSimulationFuel() {
         if(Constants.currentMode != Mode.SIM) return;
 
-        driveSimulation.setSimulationWorldPose(new Pose2d(FIELD_LENGTH_M - 3, 3, Rotation2d.kZero));
+        driveSimulation.setSimulationWorldPose(new Pose2d(15.89, 7.275, Rotation2d.fromDegrees(-141.25)));
         FuelUtil.fullFieldReset();
     }
 
@@ -195,13 +209,11 @@ public class RobotContainer {
         
         Pose3d[] robotFuel = FuelUtil.getFuelPosesFromRobot(bumpRobotPose, intake.getFuelCount(), intake.getExtendDistance());
 
-        Logger.recordOutput("Simulation/Real Sim Pose", bumpRobotPose);
-        Logger.recordOutput("Simulation/Debug Sim Pose", driveSimulation.getSimulatedDriveTrainPose());
-        Logger.recordOutput("Simulation/Robot Fuel", robotFuel);
-        Logger.recordOutput("Simulation/Fuel", fuel);
-
-        Logger.recordOutput("Bump/VisualizationPoseNull", bumpVisualizationPose == null);
-        Logger.recordOutput("Bump/IsOnBump", bump.isOnBump());
+        Logger.recordOutput("Simulation/Robot/Real Sim Pose", bumpRobotPose);
+        Logger.recordOutput("Simulation/Robot/Debug Sim Pose", driveSimulation.getSimulatedDriveTrainPose());
+        Logger.recordOutput("Simulation/Fuel/Fuel in robot", robotFuel);
+        Logger.recordOutput("Simulation/Fuel/Fuel on field", fuel);
+        Logger.recordOutput("Simulation/Fuel/Fuel on fly", LaunchCalculator.simulatePoses(bumpRobotPose, shooter.getCurrentLaunchParameters()));
     }
 
     private Pose2d getBumpPose() {

@@ -10,6 +10,7 @@ import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.subsystems.shooter.LaunchCalculator.LaunchParameters;
 
 public class Shooter extends SubsystemBase {
     public static final Pose3d HOOD_OFFSET = new Pose3d(0.287, 0, 0.53, new Rotation3d(0, Units.degreesToRadians(-10), 0));
@@ -47,7 +48,19 @@ public class Shooter extends SubsystemBase {
         return run(() -> io.stop());
     }
 
-    public Command setShot(double mps, double angle) {
-        return run(() ->io.setShooterState(mps, angle));
+    public void setShot(LaunchParameters parameters) {
+        io.setShooterState(parameters.mps, parameters.angle);
+    }
+
+    public LaunchParameters getCurrentLaunchParameters() {
+        return new LaunchParameters(getFuelExitVelocity(), getExitAngle());
+    }
+
+    public double getFuelExitVelocity() {
+        return inputs.fuelExitVelocityMPS;
+    }
+
+    public double getExitAngle() {
+        return inputs.hoodPosition;
     }
 }

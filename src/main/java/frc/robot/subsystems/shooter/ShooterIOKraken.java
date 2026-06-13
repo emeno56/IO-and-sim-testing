@@ -47,6 +47,7 @@ public class ShooterIOKraken implements ShooterIO {
     protected final PositionVoltage positionRequest = new PositionVoltage(0).withEnableFOC(true);
     protected final VelocityVoltage velocityRequest = new VelocityVoltage(0).withEnableFOC(true);
     protected final VoltageOut vOutRequest = new VoltageOut(0);
+    
     protected final StatusSignal<Angle> motor1Position;
     protected final StatusSignal<Current> motor1StatorCurrent;
     protected final StatusSignal<Current> motor1SupplyCurrent;
@@ -138,6 +139,7 @@ public class ShooterIOKraken implements ShooterIO {
             hoodConfig.Slot0 = hoodGains;
             hoodConfig.Feedback.SensorToMechanismRatio = HOOD_GEARING;
             hoodConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+            hoodConfig.ClosedLoopGeneral.ContinuousWrap = true;
             // hoodConfig.SoftwareLimitSwitch.ForwardSoftLimitEnable
 
         motor1.getConfigurator().apply(shooterConfig);
