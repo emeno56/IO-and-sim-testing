@@ -106,9 +106,8 @@ public class IntakeIOKraken implements IntakeIO {
             .withKA(0);
         
         MotionMagicConfigs magicConfigs = new MotionMagicConfigs()
-            .withMotionMagicCruiseVelocity(4.5)
-            .withMotionMagicAcceleration(28)
-            .withMotionMagicJerk(0);
+            .withMotionMagicCruiseVelocity(4)
+            .withMotionMagicAcceleration(25);
 
         TalonFXConfiguration extensionMotorConfig = new TalonFXConfiguration();
             extensionMotorConfig.CurrentLimits.StatorCurrentLimit = 60;

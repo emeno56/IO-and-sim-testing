@@ -1,5 +1,6 @@
 package frc.robot.subsystems.intake;
 
+import org.ironmaple.simulation.IntakeSimulation;
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.math.geometry.Pose3d;
@@ -15,6 +16,7 @@ public class Intake extends SubsystemBase {
     public static final Pose3d INTAKE_OFFSET = new Pose3d(-(0.055 + 0.042), 0, 0.425 - 0.235, Rotation3d.kZero);
     private final IntakeIO io;
     private final IntakeIOInputsAutoLogged inputs = new IntakeIOInputsAutoLogged();
+    private IntakeSimulation intakeSim = null;
 
     private final Alert leftDisconnect;
     private final Alert rightDisconnect;
@@ -45,11 +47,8 @@ public class Intake extends SubsystemBase {
         return run(() -> io.stopIntake());
     }
 
-    public Command agitateIntake() {
-        return run(() -> {
-            double target = (Timer.getFPGATimestamp() % 1.0) < 0.5 ? 7.5 : 10.5;
-            io.setIntakeState(target, 50);
-        });
+    public void closeIntake() {
+        io.setIntakeState(0, 0);
     }
 
     public int getFuelCount() {
@@ -58,5 +57,13 @@ public class Intake extends SubsystemBase {
 
     public double getExtendDistance() {
         return inputs.extendDistance;
+    }
+
+    public void setSim() {
+        intakeSim = io.getIntakeSimulation();
+    }
+
+    public IntakeSimulation getSim() {
+        return intakeSim;
     }
 }

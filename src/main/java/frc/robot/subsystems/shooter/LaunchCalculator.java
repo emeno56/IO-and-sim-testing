@@ -3,23 +3,22 @@ package frc.robot.subsystems.shooter;
 import java.security.Timestamp;
 import java.util.ArrayList;
 
+import org.ironmaple.simulation.gamepieces.GamePieceProjectile;
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.util.Units;
+import static frc.robot.subsystems.shooter.Shooter.*;
 
 public class LaunchCalculator {
     //Constants
-    private static final double kGravity = 9.81;
+    private static final double kGravity = GamePieceProjectile.GRAVITY;//9.81;
 
-    private static final double kTargetHeight = Units.inchesToMeters(72);
+    private static final double kTargetPhysicalHeight = Units.inchesToMeters(72);
     private static final double kTargetRadius = Units.inchesToMeters(41.7 / 2.0);
-
-    private static final double kShooterOffsetX = 0.2; //??? in meters
-    private static final double kShooterOffsetZ = 0.6; //??? meters
-    private static final double kShooterOffsetY = 0;
+    private static final double kTargetHeight = kTargetPhysicalHeight - Units.inchesToMeters(18);
 
     private static final double kMaxAngle = 45;
 
@@ -73,7 +72,7 @@ public class LaunchCalculator {
 
         //check each angle with each speed to find the best shot
         for(double ang = 0; ang < kMaxAngle; ang += 1) {
-            for(double mps = 1; mps < 20; mps += 1) {
+            for(double mps = 1; mps < 10; mps += 0.5) {
                 double vx = mps * Math.cos(Math.toRadians(90 - ang));
                 double vz = mps * Math.sin(Math.toRadians(90 - ang));
                 //if the fuel maximum height is greater than the provided limit, skip
@@ -82,12 +81,12 @@ public class LaunchCalculator {
                 //if the fuel height when the fuel is at the closest point of the target is less than the target height (doesn't reach target), bad parameters
                 double timeToCloseTarget = (distanceToTarget - kTargetRadius) / vx;
                 double heightAtCloseTargetTime = getZComponentFromVelocityAndTime(vz, timeToCloseTarget);
-                if(heightAtCloseTargetTime < kTargetHeight) continue;
+                if(heightAtCloseTargetTime < kTargetPhysicalHeight) continue;
 
                 //if the fuel height when the fuel is at the closes point of the target is greater than the target height (goes over target), no good
                 double timeToFarTarget = (distanceToTarget + kTargetRadius) / vx;
                 double heightAtFarTargetTime = getZComponentFromVelocityAndTime(vz, timeToFarTarget);
-                if(heightAtFarTargetTime > kTargetHeight) continue;
+                if(heightAtFarTargetTime > kTargetPhysicalHeight) continue;
 
                 if(parameters == null) {
                     parameters = new LaunchParameters(mps, ang);

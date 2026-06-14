@@ -46,6 +46,7 @@ import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.shooter.ShooterIO;
 import frc.robot.subsystems.shooter.ShooterIOKraken;
 import frc.robot.subsystems.shooter.ShooterIOSim;
+import frc.robot.subsystems.shooter.Shooter.ShooterCommands;
 import frc.robot.subsystems.customDrive.Drive.DriveCommands;
 import frc.robot.subsystems.vision.*;
 import frc.robot.util.FuelUtil;
@@ -118,6 +119,7 @@ public class RobotContainer {
                     new VisionIOPhotonVisionSim(camera1Name, robotToCamera1, driveSimulation::getSimulatedDriveTrainPose)
                 );
                 intake = new Intake(new IntakeIOSim(driveSimulation));
+                intake.setSim();
                 shooter = new Shooter(new ShooterIOSim());
                 break;
         default:
@@ -152,14 +154,7 @@ public class RobotContainer {
         joystick.x().onTrue(Commands.run(() -> drive.xStop(), drive));
         joystick.leftTrigger().whileTrue(intake.runIntake());
         joystick.a().whileTrue(
-            Commands.defer(() -> { return
-                intake.agitateIntake().alongWith(
-                Commands.run(() ->
-                    shooter.setShot(LaunchCalculator.calculateBestParameters(
-                        drive.getDistanceToPose(() -> getHubLocation()).getAsDouble()
-                    ))
-                ));
-            }, Set.of()).repeatedly()
+            ShooterCommands.shoot(shooter, intake, drive, intake.getSim())
         );
         joystick.a().whileTrue(
             DriveCommands.pointToPoint(
@@ -175,6 +170,7 @@ public class RobotContainer {
 
         driveSimulation.setSimulationWorldPose(new Pose2d(15.89, 7.275, Rotation2d.fromDegrees(-141.25)));
         FuelUtil.fullFieldReset();
+        // SimulatedArena.getInstance().resetFieldForAuto();; //TODO: Use this if your computer is really slow
     }
 
     public void updateSimulation() {

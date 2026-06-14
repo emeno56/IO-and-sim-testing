@@ -119,4 +119,9 @@ public class IntakeIOSim extends IntakeIOKraken {
     public int getFuelCount() {
         return intake.getGamePiecesAmount();
     }
+
+    @Override
+    public IntakeSimulation getIntakeSimulation() {
+        return intake;
+    }
 }

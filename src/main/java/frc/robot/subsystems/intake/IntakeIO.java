@@ -1,5 +1,6 @@
 package frc.robot.subsystems.intake;
 
+import org.ironmaple.simulation.IntakeSimulation;
 import org.littletonrobotics.junction.AutoLog;
 
 public interface IntakeIO {
@@ -52,4 +53,6 @@ public interface IntakeIO {
     public default void setRollerSpeed(double rotPerSec) {}
 
     public default int getFuelCount() {return 0;}
+
+    public default IntakeSimulation getIntakeSimulation() {return null;}
 }

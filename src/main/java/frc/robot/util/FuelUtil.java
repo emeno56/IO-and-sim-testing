@@ -2,10 +2,12 @@ package frc.robot.util;
 
 import static frc.robot.Constants.FIELD_LENGTH_M;
 import static frc.robot.Constants.FIELD_WIDTH_M;
+import static frc.robot.Constants.getHubLocation;
 
 import org.ironmaple.simulation.SimulatedArena;
 import org.ironmaple.simulation.drivesims.AbstractDriveTrainSimulation;
 import org.ironmaple.simulation.seasonspecific.rebuilt2026.RebuiltFuelOnField;
+import org.ironmaple.simulation.seasonspecific.rebuilt2026.RebuiltHub;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
@@ -118,6 +120,14 @@ public class FuelUtil {
                 SimulatedArena.getInstance().addGamePiece(new RebuiltFuelOnField(new Translation2d(x, y)));
             }
         }
+    }
+
+    public static void addHubExitFuel(boolean redHub) {
+        Translation2d exitCenter = getHubLocation().getTranslation().plus(new Translation2d(redHub ? -1 * (Units.inchesToMeters(47) / 2.0) : (Units.inchesToMeters(47) / 2.0), 0));
+        Translation2d exit = exitCenter.plus(new Translation2d(0, Math.random() * Units.inchesToMeters(47) - Units.inchesToMeters(47) / 2.0));
+        RebuiltFuelOnField exitFuel = new RebuiltFuelOnField(exit);
+        exitFuel.setLinearVelocity(2.5, 0);
+        SimulatedArena.getInstance().addGamePiece(exitFuel);
     }
 
     public static Pose3d[] getFuelPosesFromRobot(Pose3d robotPose3d, int count, double extendDistanceInches) {

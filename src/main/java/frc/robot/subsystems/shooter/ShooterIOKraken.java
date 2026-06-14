@@ -139,7 +139,7 @@ public class ShooterIOKraken implements ShooterIO {
             hoodConfig.Slot0 = hoodGains;
             hoodConfig.Feedback.SensorToMechanismRatio = HOOD_GEARING;
             hoodConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
-            hoodConfig.ClosedLoopGeneral.ContinuousWrap = true;
+            // hoodConfig.ClosedLoopGeneral.ContinuousWrap = true;
             // hoodConfig.SoftwareLimitSwitch.ForwardSoftLimitEnable
 
         motor1.getConfigurator().apply(shooterConfig);
